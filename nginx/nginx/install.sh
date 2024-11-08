@@ -47,6 +47,28 @@ function install_service_on_systemd() {
 }
 
 function installProduct() {
+    filenum=$(cat /etc/security/limits.conf |grep -v ^#|grep nofile|wc -l)
+    nropennum=$(cat /etc/sysctl.conf |grep -v ^#|grep nr_open|wc -l)
+    if [ $nropennum -lt 1 ];then
+	    echo "The server openfile parameters are not adjusted, /etc/sysctl.conf have been adjusted. "
+	    echo "fs.nr_open = 1048576" >>/etc/sysctl.conf
+	    true || sysctl -p >/dev/null
+    fi	    
+    if [ $filenum -lt 1 ];then
+        echo "The server openfile parameters are not adjusted, /etc/security/limits.conf have been adjusted. "
+        echo "* soft nproc  65536" >>/etc/security/limits.conf
+	echo "* soft nofile 65536" >>/etc/security/limits.conf
+	echo "* soft stack  65536" >>/etc/security/limits.conf
+	echo "* hard nproc  65536" >>/etc/security/limits.conf
+	echo "* hard nofile 65536" >>/etc/security/limits.conf
+	echo "* hard stack  65536" >>/etc/security/limits.conf
+	echo "root soft nproc  65536" >>/etc/security/limits.conf
+	echo "root soft nofile 65536" >>/etc/security/limits.conf
+	echo "root soft stack  65536" >>/etc/security/limits.conf
+	echo "root hard nproc  65536" >>/etc/security/limits.conf
+	echo "root hard nofile 65536" >>/etc/security/limits.conf
+        echo "root hard stack  65536" >>/etc/security/limits.conf
+    fi
     taoskeeperonline=$(netstat -atnlp|grep 6043|grep LISTEN|wc -l)
     if [ "$taoskeeperonline" == 1 ];then
         echo -e "\033[44;31;5mPort 6043 in used! Please check or modify port ,then reinstall!\033[0m"
@@ -91,6 +113,8 @@ function installProduct() {
     else
 	echo -e "\033[44;32;1mNginx is installed successfully!\033[0m"
     fi
+    ${csudo}systemctl status nginxd
+    echo -e  "\033[44;31;5mPlease modify the server IP address in the nginx configuration file!\033[0m"
 }
 
 ## ==============================Main program starts from here============================
